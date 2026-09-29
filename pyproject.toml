@@ -2,7 +2,7 @@
 name = "bbb"
 version = "0.1.0"
 requires-python = ">=3.12,<3.13"
-dependencies = ["numpy>=2.0", "rdkit>=2025.3", "scikit-learn", "xgboost"]
+dependencies = ["numpy>=2.0", "rdkit>=2025.3", "scikit-learn", "xgboost", "fastapi", "uvicorn", "pydantic"]
 
 [build-system]
 requires = ["setuptools>=68"]
