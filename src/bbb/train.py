@@ -39,6 +39,7 @@ XGB_GRID = [
     {"max_depth": 6, "n_estimators": 300, "learning_rate": 0.05, "subsample": 0.8},
     {"max_depth": 6, "n_estimators": 600, "learning_rate": 0.03, "subsample": 0.6},
     {"max_depth": 8, "n_estimators": 400, "learning_rate": 0.05, "subsample": 0.6},
+    {"max_depth": 10, "n_estimators": 400, "learning_rate": 0.05, "subsample": 0.6},
 ]
 LR_GRID = [{"C": c} for c in (0.01, 0.1, 1.0, 10.0, 100.0)]
 
@@ -75,11 +76,14 @@ def score(y_true: np.ndarray, proba: np.ndarray) -> dict:
 
 def run_cell(model_name, grid, X, y, tr, va, te, seed):
     """Select hyperparameters on validation, evaluate once on test."""
-    best, best_val = None, -np.inf
+    best, best_val, best_params = None, -np.inf, grid[0]
     for params in grid:
         clf = build(model_name, params, seed).fit(X[tr], y[tr])
         val_auroc = roc_auc_score(y[va], clf.predict_proba(X[va])[:, 1])
-        if val_auroc > best_val:
+        # Grids are ordered simplest-first. With ~195 validation molecules,
+        # AUROC differences under ~0.01 are noise, so a more complex model has
+        # to clear the incumbent by that margin to displace it.
+        if best is None or val_auroc > best_val + 0.01:
             best, best_val, best_params = clf, val_auroc, params
 
     metrics = score(y[te], best.predict_proba(X[te])[:, 1])
