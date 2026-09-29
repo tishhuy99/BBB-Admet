@@ -1,0 +1,8 @@
+pyproject.toml
+src/bbb/__init__.py
+src/bbb/data.py
+src/bbb.egg-info/PKG-INFO
+src/bbb.egg-info/SOURCES.txt
+src/bbb.egg-info/dependency_links.txt
+src/bbb.egg-info/requires.txt
+src/bbb.egg-info/top_level.txt

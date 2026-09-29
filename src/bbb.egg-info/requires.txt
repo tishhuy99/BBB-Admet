@@ -1,0 +1,4 @@
+numpy>=2.0
+rdkit>=2025.3
+scikit-learn
+xgboost

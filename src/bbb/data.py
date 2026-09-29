@@ -34,7 +34,7 @@ class Dataset:
     def __len__(self) -> int:
         return len(self.y)
 
-    def take(self, idx: np.ndarray) -> "Dataset":
+    def take(self, idx: np.ndarray) -> Dataset:
         return Dataset(
             self.smiles[idx], self.y[idx], self.inchikey[idx], self.scaffold[idx],
             dict(self.report, subset_of=len(self.y)),
@@ -131,8 +131,8 @@ def random_split(n: int, seed: int, fracs=(0.7, 0.1, 0.2)):
     assert abs(sum(fracs) - 1.0) < 1e-9
     rng = np.random.default_rng(seed)
     perm = rng.permutation(n)
-    n_train = int(round(fracs[0] * n))
-    n_val = int(round(fracs[1] * n))
+    n_train = round(fracs[0] * n)
+    n_val = round(fracs[1] * n)
     return perm[:n_train], perm[n_train:n_train + n_val], perm[n_train + n_val:]
 
 
@@ -151,8 +151,8 @@ def scaffold_split(scaffolds: np.ndarray, seed: int, fracs=(0.7, 0.1, 0.2)):
     for i, s in enumerate(scaffolds):
         groups[s].append(i)
 
-    n_val_target = int(round(fracs[1] * n))
-    n_test_target = int(round(fracs[2] * n))
+    n_val_target = round(fracs[1] * n)
+    n_test_target = round(fracs[2] * n)
     big_cutoff = 0.5 * min(n_val_target, n_test_target)
 
     # Deterministic base order (size desc, then scaffold string) before shuffling,
