@@ -66,13 +66,42 @@ no FAISS, no index.
 
 ---
 
-## Two findings about model selection
+## Model comparison
 
-**Logistic regression matches XGBoost.** 0.891 ± 0.016 vs 0.897 ± 0.026 AUROC on
-the scaffold split — well inside one standard deviation. On 2,048-bit Morgan
-fingerprints with 1,365 training molecules, the boosted model buys nothing. No
-GNN was trained; on a dataset this size it would not have changed this
-conclusion.
+Mean ± std over five seeds, identical splits and validation-only model selection
+for every row.
+
+| Model | Random AUROC | Scaffold AUROC | Scaffold AUPRC (non-permeable) |
+|---|---|---|---|
+| Logistic regression (Morgan) | 0.921 ± 0.010 | 0.891 ± 0.016 | 0.765 ± 0.028 |
+| XGBoost (Morgan) | 0.924 ± 0.015 | 0.897 ± 0.026 | 0.769 ± 0.028 |
+| GATv2 (atom/bond graph) | 0.925 ± 0.006 | 0.903 ± 0.021 | 0.756 ± 0.018 |
+
+<!-- TODO: GAT row is from the run with inverted pos_weight in gat.py. Rerun
+     `python -m bbb.gat` after the fix and replace these numbers. -->
+
+**The three model classes are indistinguishable.** Scaffold-split AUROC differs
+by 0.012 between the best and worst model, against seed-to-seed standard
+deviations of 0.016–0.026. On 2,048-bit Morgan fingerprints with 1,365 training
+molecules, neither gradient boosting nor learned graph representations buy
+anything over a linear model.
+
+**The random-vs-scaffold gap is a property of the split, not the model.** It is
+0.030 for logistic regression, 0.027 for XGBoost and 0.022 for GATv2. Three
+architectures with different inductive biases show the same penalty, which is
+what scaffold leakage predicts.
+
+**GATv2 details.** Two-layer GATv2 with edge features on plain atom and bond
+descriptors (37-dim nodes, 6-dim edges), mean and sum pooling, trained with
+early stopping on validation AUROC. Three hand-picked configurations per cell,
+with the same rule as the fingerprint models: a larger configuration must beat
+the incumbent by 0.01 on validation. The smallest configuration won 9 of 10
+cells. It was not tuned beyond that grid, and validation AUROC is used for both
+early stopping and configuration choice, which biases validation scores upward.
+It is served nowhere: the deployed model stays XGBoost, since the GAT ties it
+and would add roughly 2 GB of torch to the image.
+
+## Model selection findings
 
 **Validation is too small to select hyperparameters cleanly.** An unconstrained
 grid search picked `max_depth=10`, improving validation AUROC by 0.002 while
@@ -111,6 +140,14 @@ python scripts/fetch_data.py      # downloads BBB_Martins from TDC
 python -m bbb.train               # 2 models x 2 splits x 5 seeds -> results.csv
 python scripts/analyze.py         # fits the AD threshold, writes figures/
 pytest -q
+```
+The GATv2 benchmark runs in a separate environment, because conda’s llvm-openmp (installed for xgboost) conflicts with torch’s bundled OpenMP runtime.
+
+```bash
+conda env create -f environment-gnn.yml
+conda activate bbb-gnn
+pip install -e ".[gnn]"
+python -m bbb.gat --out results_gat.csv
 ```
 
 Per-seed numbers are in `results.csv`; the fitted threshold and its validation
